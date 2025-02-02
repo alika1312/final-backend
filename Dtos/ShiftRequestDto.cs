@@ -1,0 +1,16 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using api.Models;
+
+namespace api.Dtos
+{
+    public class ShiftRequestDto
+    {
+        public DateOnly date { get; set; }
+        public int extra { get; set; }
+        public string comment { get; set; } = string.Empty;
+        public int ShiftTypeID { get; set; }
+    }
+}
