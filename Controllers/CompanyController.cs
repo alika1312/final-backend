@@ -29,7 +29,7 @@ namespace api.Controllers
             return Ok(companies);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
             var company = await _context.Company
@@ -62,7 +62,7 @@ namespace api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = company.companyID }, companyDto);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteCompany(int id)
         {
             var company = await _context.Company.FirstOrDefaultAsync(c => c.companyID == id);
@@ -77,7 +77,7 @@ namespace api.Controllers
             return NoContent();
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateCompany(int id, [FromBody] CompanyRequestDto updateCompanyDto)
         {
             var company = await _context.Company.FirstOrDefaultAsync(c => c.companyID == id);

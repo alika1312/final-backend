@@ -7,6 +7,7 @@ using api.Dtos;
 using api.Mappers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using api.Models; 
 
 namespace api.Controllers
 {
@@ -28,7 +29,7 @@ namespace api.Controllers
             return Ok(shiftTypes);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
             var shiftType = await _context.ShiftType.FindAsync(id);
@@ -36,24 +37,9 @@ namespace api.Controllers
             return Ok(shiftType);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateShiftType([FromBody] ShiftTypeRequestDto createShiftTypeDto)
-        {
-            if (string.IsNullOrWhiteSpace(createShiftTypeDto.shiftTypeName))
-            {
-                return BadRequest("ShiftType name is required.");
-            }
-
-            var shiftType = createShiftTypeDto.ToShiftTypeFromDto();
-
-            _context.ShiftType.Add(shiftType);
-            await _context.SaveChangesAsync();
-
-            var shiftTypeDto = shiftType.ToShiftTypeDto();
-            return CreatedAtAction(nameof(GetById), new { id = shiftType.shiftTypeID }, shiftTypeDto);
-        }
-
-        [HttpDelete("{id}")]
+     
+   
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteShiftType(int id)
         {
             var shiftType = await _context.ShiftType.FindAsync(id);
@@ -65,7 +51,7 @@ namespace api.Controllers
             return NoContent();
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateShiftType(int id, [FromBody] ShiftTypeRequestDto updateShiftTypeDto)
         {
             var shiftType = await _context.ShiftType.FindAsync(id);
@@ -76,5 +62,81 @@ namespace api.Controllers
 
             return NoContent();
         }
+         [HttpPost("bulk")]
+        public async Task<IActionResult> CreateShiftTypes([FromBody] List<ShiftTypeRequestDto> shiftTypeDtos)
+      {
+    if (shiftTypeDtos == null || !shiftTypeDtos.Any())
+    {
+        return BadRequest("No shift types provided.");
+    }
+
+    // Optional: Validate each entry
+    var invalidNames = shiftTypeDtos
+        .Where(dto => string.IsNullOrWhiteSpace(dto.shiftTypeName))
+        .Select((dto, index) => index + 1)
+        .ToList();
+
+    if (invalidNames.Any())
+    {
+        return BadRequest($"ShiftType name is required for entries at positions: {string.Join(", ", invalidNames)}");
+    }
+
+    // Convert all DTOs to entities
+    var shiftTypes = shiftTypeDtos
+        .Select(dto => dto.ToShiftTypeFromDto())
+        .ToList();
+
+    _context.ShiftType.AddRange(shiftTypes);
+    await _context.SaveChangesAsync();
+
+    // Convert saved entities to DTOs to return
+    var createdDtos = shiftTypes
+        .Select(st => st.ToShiftTypeDto())
+        .ToList();
+
+    return Ok(createdDtos);
+}
+
+[HttpPost("company/{companyId:int}")]
+public async Task<IActionResult> CreateShiftTypesForCompany(int companyId, [FromBody] List<string> shiftTypeNames)
+{
+    if (shiftTypeNames == null || !shiftTypeNames.Any())
+    {
+        return BadRequest("No shift type names provided.");
+    }
+
+    var company = await _context.Company
+        .Include(c => c.shiftTypes)
+        .FirstOrDefaultAsync(c => c.companyID == companyId);
+
+    if (company == null)
+    {
+        return NotFound("Company not found.");
+    }
+
+    var newShiftTypes = shiftTypeNames.Select(name => new ShiftType
+    {
+        shiftTypeName = name,
+        companyID = companyId
+    }).ToList();
+
+    _context.ShiftType.AddRange(newShiftTypes);
+    await _context.SaveChangesAsync();
+
+    return Ok(newShiftTypes);
+}
+
+
+[HttpGet("company/{companyId:int}")]
+public async Task<IActionResult> GetCompanyShiftTypes(int companyId)
+{
+    var shiftTypes = await _context.ShiftType
+        .Where(st => st.companyID == companyId)
+        .ToListAsync();
+
+    return Ok(shiftTypes);
+}
+
     }
 }
+

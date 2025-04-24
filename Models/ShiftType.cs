@@ -10,6 +10,8 @@ namespace api.Models
         public int shiftTypeID { get; set; }
         public string shiftTypeName { get; set; } = string.Empty;
 
+        public int companyID { get; set; }
+        public Company Company { get; set; }
         public ICollection<Shift> Shifts { get; set; } = new List<Shift>();
     }
 }

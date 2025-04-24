@@ -11,7 +11,7 @@ namespace api.Mappers
     public static class ShiftMappers
     {
 
-        public static ShiftDto ToShiftDto(this Shift shiftModel)
+        public static ShiftDto ToShiftDto(this Shift shiftModel, ApplicationDBContext _context)
         {
             return new ShiftDto
             {
@@ -21,6 +21,7 @@ namespace api.Mappers
                 comment = shiftModel.comment,
                 ShiftTypeID = shiftModel.ShiftTypeID,
                 ShiftTypeName = shiftModel.ShiftType != null ? shiftModel.ShiftType.shiftTypeName : string.Empty
+,               Workers = [.. _context.WorkerShift.Where(ws => ws.ShiftID == shiftModel.shiftID).Select(s => s.Worker.workerName)]
             };
         }
 

@@ -30,7 +30,7 @@ namespace api.Controllers
             return Ok(admins);
         }
 
-        [HttpGet("{userId}")]
+        [HttpGet("{userId:int}")]
         public async Task<IActionResult> GetAdminByUserId(int userId)
         {
             var admin = await _context.Admin
@@ -73,7 +73,7 @@ namespace api.Controllers
             return CreatedAtAction(nameof(GetAdminByUserId), new { userId = admin.userID }, adminDto);
         }
 
-        [HttpDelete("{userId}")]
+        [HttpDelete("{userId:int}")]
         public async Task<IActionResult> DeleteAdmin(int userId)
         {
             var admin = await _context.Admin.FirstOrDefaultAsync(a => a.userID == userId);

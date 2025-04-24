@@ -36,26 +36,35 @@ namespace api.Controllers
             return Ok(worker);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateWorker([FromBody] CreateWorkerDto createWorkerDto)
-        {
-            if (string.IsNullOrWhiteSpace(createWorkerDto.workerName))
-            {
-                return BadRequest("Worker name is required.");
-            }
+      [HttpPost]
+public async Task<IActionResult> CreateWorker([FromBody] CreateWorkerDto createWorkerDto)
+{
+    if (string.IsNullOrWhiteSpace(createWorkerDto.workerName))
+    {
+        return BadRequest("Worker name is required.");
+    }
 
-            var worker = new Worker
-            {
-                workerName = createWorkerDto.workerName
-            };
+  
+    var branch = await _context.Branch.FindAsync(createWorkerDto.branchID);
+    if (branch == null)
+    {
+        return BadRequest("Invalid branchID. The branch does not exist.");
+    }
 
-            _context.Worker.Add(worker);
-            await _context.SaveChangesAsync();
+    var worker = new Worker
+    {
+        workerName = createWorkerDto.workerName,
+        branchID = createWorkerDto.branchID 
+    };
 
-            return CreatedAtAction(nameof(GetById), new { id = worker.workerID }, worker);
-        }
+    _context.Worker.Add(worker);
+    await _context.SaveChangesAsync();
 
-        [HttpDelete("{id}")]
+    return CreatedAtAction(nameof(GetById), new { id = worker.workerID }, worker);
+}
+
+
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteWorker(int id)
         {
             var worker = await _context.Worker.FindAsync(id);
@@ -67,7 +76,7 @@ namespace api.Controllers
             return NoContent();
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateWorker(int id, [FromBody] CreateWorkerDto createWorkerDto)
         {
             if (!ModelState.IsValid)
@@ -93,5 +102,79 @@ namespace api.Controllers
 
             return Ok(updatedWorker);
         }
+ [HttpPost("bulk-create-workers-with-professions")]
+public async Task<IActionResult> CreateWorkersWithProfessions([FromBody] List<CreateWorkerWithProfessionsDto> dtos)
+{
+    if (dtos == null || !dtos.Any())
+    {
+        return BadRequest("No worker data provided.");
+    }
+
+    // Validate all branch IDs
+    var branchIds = dtos.Select(d => d.branchID).Distinct().ToList();
+
+    // Use AsEnumerable() to perform the filtering in memory and ToList() instead of ToListAsync()
+    var validBranches = _context.Branch
+        .AsEnumerable()
+        .Where(b => branchIds.Contains(b.branchID))
+        .Select(b => b.branchID)
+        .ToList();
+
+    var invalidBranches = branchIds.Except(validBranches).ToList();
+    if (invalidBranches.Any())
+    {
+        return BadRequest($"Invalid branch IDs: {string.Join(", ", invalidBranches)}");
+    }
+
+    var createdWorkers = new List<Worker>();
+    var createdWorkerProfessions = new List<WorkerProfession>();
+
+    foreach (var dto in dtos)
+    {
+        if (string.IsNullOrWhiteSpace(dto.workerName))
+        {
+            return BadRequest("Worker name is required for all entries.");
+        }
+
+        var worker = new Worker
+        {
+            workerName = dto.workerName,
+            branchID = dto.branchID
+        };
+
+        _context.Worker.Add(worker);
+        createdWorkers.Add(worker);
+    }
+
+    await _context.SaveChangesAsync();
+
+    for (int i = 0; i < dtos.Count; i++)
+    {
+        var worker = createdWorkers[i];
+        var professions = dtos[i].professionIDs;
+
+        if (professions != null)
+        {
+            foreach (var professionID in professions)
+            {
+                createdWorkerProfessions.Add(new WorkerProfession
+                {
+                    workerID = worker.workerID,
+                    professionID = professionID
+                });
+            }
+        }
+    }
+
+    _context.WorkerProfession.AddRange(createdWorkerProfessions);
+    await _context.SaveChangesAsync();
+
+    return Ok(new
+    {
+        createdWorkers,
+        createdWorkerProfessions
+    });
+}
+
     }
 }

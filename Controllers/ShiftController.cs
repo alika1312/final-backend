@@ -26,12 +26,11 @@ namespace api.Controllers
         public async Task<IActionResult> GetAll()
         {
             var shifts = await _context.Shift.ToListAsync();
-            var shiftDtos = shifts.Select(s => s.ToShiftDto());
-
+            var shiftDtos = shifts.Select(s => s.ToShiftDto(_context));
             return Ok(shiftDtos);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetShiftById(int id)
         {
             var shift = await _context.Shift
@@ -44,7 +43,7 @@ namespace api.Controllers
                 return NotFound($"Shift with ID {id} not found.");
             }
 
-            var shiftDto = shift.ToShiftDto();
+            var shiftDto = shift.ToShiftDto(_context);
             return Ok(shiftDto);
         }
 
@@ -61,11 +60,43 @@ namespace api.Controllers
             _context.Shift.Add(shiftModel);
             await _context.SaveChangesAsync();
 
-            var shiftDto = shiftModel.ToShiftDto();
+            var shiftDto = shiftModel.ToShiftDto(_context);
             return CreatedAtAction(nameof(GetShiftById), new { id = shiftModel.shiftID }, shiftDto);
         }
+        [HttpPost("bulk")]
+public async Task<IActionResult> CreateMultipleShifts([FromBody] List<ShiftRequestDto> shiftRequestDtos)
+{
+    if (shiftRequestDtos == null || !shiftRequestDtos.Any())
+    {
+        return BadRequest("No shifts provided.");
+    }
 
-        [HttpDelete("{id}")]
+    var createdShifts = new List<ShiftDto>();
+
+    foreach (var shiftRequestDto in shiftRequestDtos)
+    {
+        var shiftType = await _context.ShiftType
+            .FirstOrDefaultAsync(st => st.shiftTypeID == shiftRequestDto.ShiftTypeID);
+
+        if (shiftType == null)
+        {
+            return BadRequest($"Invalid ShiftTypeID: {shiftRequestDto.ShiftTypeID}");
+        }
+
+        var shiftModel = shiftRequestDto.ToShiftFromCreateDTO(_context);
+        _context.Shift.Add(shiftModel);
+
+        var shiftDto = shiftModel.ToShiftDto(_context);
+        createdShifts.Add(shiftDto);
+    }
+
+    await _context.SaveChangesAsync();
+
+    return Ok(createdShifts);
+}
+
+
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteShift(int id)
         {
             var shift = await _context.Shift.FirstOrDefaultAsync(s => s.shiftID == id);
@@ -80,7 +111,7 @@ namespace api.Controllers
             return NoContent();
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateShift(int id, [FromBody] ShiftRequestDto updateShiftDto)
         {
             var shift = await _context.Shift.FirstOrDefaultAsync(s => s.shiftID == id);
@@ -101,7 +132,7 @@ namespace api.Controllers
 
             await _context.SaveChangesAsync();
 
-            var shiftDto = shift.ToShiftDto();
+            var shiftDto = shift.ToShiftDto(_context);
             return Ok(shiftDto);
         }
     }

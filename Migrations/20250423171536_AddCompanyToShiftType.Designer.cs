@@ -12,8 +12,8 @@ using api.Data;
 namespace api.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    [Migration("20250201153003_UpdateUserIdentityChanges")]
-    partial class UpdateUserIdentityChanges
+    [Migration("20250423171536_AddCompanyToShiftType")]
+    partial class AddCompanyToShiftType
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -335,11 +335,16 @@ namespace api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("shiftTypeID"));
 
+                    b.Property<int>("companyID")
+                        .HasColumnType("int");
+
                     b.Property<string>("shiftTypeName")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("shiftTypeID");
+
+                    b.HasIndex("companyID");
 
                     b.ToTable("ShiftType");
                 });
@@ -489,6 +494,17 @@ namespace api.Migrations
                     b.Navigation("ShiftType");
                 });
 
+            modelBuilder.Entity("api.Models.ShiftType", b =>
+                {
+                    b.HasOne("api.Models.Company", "Company")
+                        .WithMany("shiftTypes")
+                        .HasForeignKey("companyID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
             modelBuilder.Entity("api.Models.Worker", b =>
                 {
                     b.HasOne("api.Models.Branch", "Branch")
@@ -552,6 +568,8 @@ namespace api.Migrations
 
             modelBuilder.Entity("api.Models.Company", b =>
                 {
+                    b.Navigation("shiftTypes");
+
                     b.Navigation("users");
                 });
 

@@ -22,7 +22,7 @@ namespace api.Controllers
         }
 
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
 
@@ -67,7 +67,7 @@ namespace api.Controllers
         }
 
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UserRequestDto updateUserDto)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());
@@ -90,7 +90,7 @@ namespace api.Controllers
         }
 
 
-        [HttpPut("{id}/password")]
+        [HttpPut("{id:int}/password")]
         public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordDto changePasswordDto)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());

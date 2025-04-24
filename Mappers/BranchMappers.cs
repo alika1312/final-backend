@@ -18,6 +18,7 @@ namespace api.Mappers
         {
             return new BranchDto
             {
+                branchID = branch.branchID,
                 branchName = branch.branchName,
                 ManagerID = branch.ManagerID
             };

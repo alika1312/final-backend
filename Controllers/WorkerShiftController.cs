@@ -38,7 +38,7 @@ namespace api.Controllers
             return Ok(workerShiftDtos);
         }
 
-        [HttpGet("{workerID}/{shiftID}")]
+        [HttpGet("{workerID:int}/{shiftID:int}")]
         public async Task<IActionResult> GetById(int workerID, int shiftID)
         {
             var workerShift = await _context.WorkerShift
@@ -87,7 +87,7 @@ namespace api.Controllers
             );
         }
 
-        [HttpDelete("{workerID}/{shiftID}")]
+        [HttpDelete("{workerID:int}/{shiftID:int}")]
         public async Task<IActionResult> DeleteWorkerShift(int workerID, int shiftID)
         {
             var workerShift = await _context.WorkerShift

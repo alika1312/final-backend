@@ -18,16 +18,12 @@ namespace api.Mappers
                 ShiftComment = workerShift.Shift.comment,
             };
         }
-        public static WorkerShift ToWorkerShift(this WorkerShiftRequestDto requestDto)
+        public static WorkerShift ToWorkerShift(this WorkerShift workerShift)
         {
             return new WorkerShift
             {
-                WorkerID = requestDto.workerID,
-                ShiftID = requestDto.shiftID,
-
-
-
-
+                WorkerID = workerShift.WorkerID,
+                ShiftID = workerShift.ShiftID,
             };
         }
     }

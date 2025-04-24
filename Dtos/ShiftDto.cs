@@ -14,5 +14,7 @@ namespace api.Dtos.Shift
         public string comment { get; set; } = string.Empty;
         public int ShiftTypeID { get; set; }
         public string ShiftTypeName { get; set; } = string.Empty;
+
+        public List<string> Workers { get; set; } = new List<string>();
     }
 }

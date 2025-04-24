@@ -32,7 +32,7 @@ namespace api.Controllers
             return Ok(workerProfessions);
         }
 
-        [HttpGet("{workerID}/{professionID}")]
+        [HttpGet("{workerID:int}/{professionID:int}")]
         public async Task<IActionResult> GetWorkerProfessionById(int workerID, int professionID)
         {
             var workerProfession = await _context.WorkerProfession
@@ -65,7 +65,7 @@ namespace api.Controllers
                 workerProfession.ToWorkerProfessionDto());
         }
 
-        [HttpDelete("{workerID}/{professionID}")]
+        [HttpDelete("{workerID:int}/{professionID:int}")]
         public async Task<IActionResult> DeleteWorkerProfession(int workerID, int professionID)
         {
             var workerProfession = await _context.WorkerProfession

@@ -11,5 +11,6 @@ namespace api.Models
         public string companyName { get; set; } = string.Empty;
 
         public ICollection<ApplicationUser> users { get; set; } = new List<ApplicationUser>();
+        public ICollection<ShiftType> shiftTypes { get; set; } = new List<ShiftType>();
     }
 }

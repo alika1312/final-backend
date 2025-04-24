@@ -31,7 +31,7 @@ namespace api.Controllers
             return Ok(professions);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetProfessionById(int id)
         {
             var profession = await _context.Profession
@@ -53,13 +53,6 @@ namespace api.Controllers
                 return BadRequest("Profession name is required.");
             }
 
-            var existingProfession = await _context.Profession
-                                                   .FirstOrDefaultAsync(p => p.professionName == createProfessionDto.professionName);
-
-            if (existingProfession != null)
-            {
-                return BadRequest("A profession with this name already exists.");
-            }
 
             var profession = createProfessionDto.ToProfession();
             _context.Profession.Add(profession);
@@ -68,7 +61,39 @@ namespace api.Controllers
             return CreatedAtAction(nameof(GetProfessionById), new { id = profession.professionID }, profession.ToProfessionDto());
         }
 
-        [HttpDelete("{id}")]
+[HttpPost("bulk")]
+public async Task<IActionResult> CreateMultipleProfessions([FromBody] List<CreateProfessionDto> createProfessionDtos)
+{
+    if (createProfessionDtos == null || !createProfessionDtos.Any())
+    {
+        return BadRequest("At least one profession must be provided.");
+    }
+
+    var invalidItems = createProfessionDtos
+        .Where(dto => string.IsNullOrWhiteSpace(dto.professionName))
+        .ToList();
+
+    if (invalidItems.Any())
+    {
+        return BadRequest("All professions must have a valid name.");
+    }
+
+    var professions = createProfessionDtos
+        .Select(dto => dto.ToProfession())
+        .ToList();
+
+    _context.Profession.AddRange(professions);
+    await _context.SaveChangesAsync();
+
+    var professionDtos = professions
+        .Select(p => p.ToProfessionDto())
+        .ToList();
+
+    return Ok(professionDtos);
+}
+
+
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteProfession(int id)
         {
             var profession = await _context.Profession.FindAsync(id);
@@ -83,7 +108,7 @@ namespace api.Controllers
             return NoContent();
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateProfession(int id, [FromBody] CreateProfessionDto updateProfessionDto)
         {
             var profession = await _context.Profession.FindAsync(id);

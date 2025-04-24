@@ -31,13 +31,14 @@ namespace api.Controllers
             return Ok(branches);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
             var branch = await _context.Branch
-                                       .Where(s => s.branchID == id)
-                                       .Include(s => s.ManagerID)
-                                       .FirstOrDefaultAsync();
+                            .Where(s => s.branchID == id)
+                            .Include(s => s.Manager)  // Use the navigation property here
+                            .FirstOrDefaultAsync();
+
             if (branch == null) return NotFound();
             return Ok(branch);
         }
@@ -53,12 +54,6 @@ namespace api.Controllers
                     return BadRequest("Manager does not exist.");
                 }
 
-                var existingBranch = await _context.Branch
-                                                   .FirstOrDefaultAsync(b => b.ManagerID == branchDto.ManagerID.Value);
-                if (existingBranch != null)
-                {
-                    return BadRequest("Manager is already assigned to another branch.");
-                }
             }
 
             var branchModel = new Branch
@@ -71,8 +66,51 @@ namespace api.Controllers
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetById), new { id = branchModel.branchID }, branchModel);
         }
+        
+[HttpPost("bulk")]
+public async Task<IActionResult> CreateMultiple([FromBody] List<BranchDto> branchDtos)
+{
+    if (branchDtos == null || !branchDtos.Any())
+    {
+        return BadRequest("No branches provided.");
+    }
 
-        [HttpDelete("{id}")]
+    var branchesToAdd = new List<Branch>();
+
+    foreach (var branchDto in branchDtos)
+    {
+        if (branchDto.ManagerID.HasValue)
+        {
+            var manager = await _context.Users.FindAsync(branchDto.ManagerID.Value);
+            if (manager == null)
+            {
+                return BadRequest($"Manager with ID {branchDto.ManagerID} does not exist.");
+            }
+
+            var existingBranch = await _context.Branch
+                                               .FirstOrDefaultAsync(b => b.ManagerID == branchDto.ManagerID.Value);
+            if (existingBranch != null)
+            {
+                return BadRequest($"Manager with ID {branchDto.ManagerID} is already assigned to another branch.");
+            }
+        }
+
+        var branchModel = new Branch
+        {
+            branchName = branchDto.branchName,
+            ManagerID = branchDto.ManagerID
+        };
+
+        branchesToAdd.Add(branchModel);
+    }
+
+    await _context.Branch.AddRangeAsync(branchesToAdd);
+    await _context.SaveChangesAsync();
+
+    return Ok(branchesToAdd.Select(b => b.ToBranchDto()));
+}
+
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
             var branch = await _context.Branch.FindAsync(id);
@@ -82,7 +120,7 @@ namespace api.Controllers
             return NoContent();
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] BranchDto branchDto)
         {
             var branch = await _context.Branch.FindAsync(id);

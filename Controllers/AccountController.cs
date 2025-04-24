@@ -32,30 +32,43 @@ namespace api.Controllers
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] UserRequestDto userRequestDto)
+{
+    var existingUser = await _userManager.FindByNameAsync(userRequestDto.username);
+    if (existingUser != null)
+    {
+        return BadRequest("User already exists.");
+    }
+
+    var user = new ApplicationUser
+    {
+        UserName = userRequestDto.username,
+        isCEO = userRequestDto.isCEO,
+        companyID = userRequestDto.companyID
+    };
+
+    var result = await _userManager.CreateAsync(user, userRequestDto.password);
+    if (!result.Succeeded)
+    {
+        return BadRequest(result.Errors);
+    }
+
+    // Fetch the created user to get their ID
+    var createdUser = await _userManager.FindByNameAsync(userRequestDto.username);
+
+    return Ok(new
+    {
+        message = "User registered successfully.",
+        user = new
         {
-
-            var existingUser = await _userManager.FindByNameAsync(userRequestDto.username);
-            if (existingUser != null)
-            {
-                return BadRequest("User already exists.");
-            }
-
-            var user = new ApplicationUser
-            {
-                UserName = userRequestDto.username,
-                isCEO = userRequestDto.isCEO,
-                companyID = userRequestDto.companyID
-            };
-
-            var result = await _userManager.CreateAsync(user, userRequestDto.password);
-            if (!result.Succeeded)
-            {
-                return BadRequest(result.Errors);
-            }
-
-
-            return Ok("User registered successfully.");
+            id = createdUser.Id,
+            username = createdUser.UserName,
+            isCEO = createdUser.isCEO,
+            companyID = createdUser.companyID
         }
+    });
+}
+
+
 
 
         [HttpPost("login")]
@@ -87,12 +100,14 @@ namespace api.Controllers
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? string.Empty)
+                new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? string.Empty),
+                new Claim("companyId", user.companyID.ToString())
 
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
+              
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddMinutes(60),
                 Issuer = jwtSettings["Issuer"],

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace api.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateUserIdentityChanges : Migration
+    public partial class AddCompanyToShiftType : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -61,21 +61,6 @@ namespace api.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Profession", x => x.professionID);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "ShiftType",
-                columns: table => new
-                {
-                    shiftTypeID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    shiftTypeName = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ShiftType", x => x.shiftTypeID);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -147,25 +132,23 @@ namespace api.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Shift",
+                name: "ShiftType",
                 columns: table => new
                 {
-                    shiftID = table.Column<int>(type: "int", nullable: false)
+                    shiftTypeID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    date = table.Column<DateOnly>(type: "date", nullable: false),
-                    extra = table.Column<int>(type: "int", nullable: false),
-                    comment = table.Column<string>(type: "longtext", nullable: false)
+                    shiftTypeName = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    ShiftTypeID = table.Column<int>(type: "int", nullable: false)
+                    companyID = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Shift", x => x.shiftID);
+                    table.PrimaryKey("PK_ShiftType", x => x.shiftTypeID);
                     table.ForeignKey(
-                        name: "FK_Shift_ShiftType_ShiftTypeID",
-                        column: x => x.ShiftTypeID,
-                        principalTable: "ShiftType",
-                        principalColumn: "shiftTypeID",
+                        name: "FK_ShiftType_Company_companyID",
+                        column: x => x.companyID,
+                        principalTable: "Company",
+                        principalColumn: "companyID",
                         onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
@@ -307,6 +290,30 @@ namespace api.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "Shift",
+                columns: table => new
+                {
+                    shiftID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    date = table.Column<DateOnly>(type: "date", nullable: false),
+                    extra = table.Column<int>(type: "int", nullable: false),
+                    comment = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ShiftTypeID = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Shift", x => x.shiftID);
+                    table.ForeignKey(
+                        name: "FK_Shift_ShiftType_ShiftTypeID",
+                        column: x => x.ShiftTypeID,
+                        principalTable: "ShiftType",
+                        principalColumn: "shiftTypeID",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "Worker",
                 columns: table => new
                 {
@@ -430,6 +437,11 @@ namespace api.Migrations
                 name: "IX_Shift_ShiftTypeID",
                 table: "Shift",
                 column: "ShiftTypeID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ShiftType_companyID",
+                table: "ShiftType",
+                column: "companyID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Worker_branchID",
