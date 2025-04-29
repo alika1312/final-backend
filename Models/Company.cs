@@ -12,5 +12,6 @@ namespace api.Models
 
         public ICollection<ApplicationUser> users { get; set; } = new List<ApplicationUser>();
         public ICollection<ShiftType> shiftTypes { get; set; } = new List<ShiftType>();
+        public ICollection<Profession> professions { get; set; } = new List<Profession>();
     }
 }

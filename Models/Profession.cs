@@ -11,7 +11,8 @@ namespace api.Models
         public string professionName { get; set; } = string.Empty;
 
         
-
+        public int companyID { get; set; }
+        public Company Company { get; set; }
         public ICollection<WorkerProfession> WorkerProfessions { get; set; } = new List<WorkerProfession>();
 
     }

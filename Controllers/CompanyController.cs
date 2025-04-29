@@ -96,5 +96,60 @@ namespace api.Controllers
 
             return NoContent();
         }
+    [HttpGet("{companyId}/full-data")]
+public async Task<IActionResult> GetFullCompanyData(int companyId)
+{
+  var branches = await _context.Branch
+        .Include(b => b.Manager)
+        .Where(b => b.Manager != null && b.Manager.companyID == companyId)
+        .Select(b => new {
+            branchID = b.branchID,
+            branchName = b.branchName,
+            manager = b.Manager!.UserName
+        })
+        .ToListAsync();
+
+    var shiftTypes = await _context.ShiftType
+        .Where(st => st.companyID == companyId)
+        .Select(st => new {
+            shiftTypeID = st.shiftTypeID,
+            shiftTypeName = st.shiftTypeName
+        })
+        .ToListAsync();
+
+    var professions = await _context.Profession
+        .Where(p => p.companyID == companyId)
+        .Select(p => new {
+            professionID = p.professionID,
+            professionName = p.professionName
+        })
+        .ToListAsync();
+
+  var workers = await _context.Worker
+    .Where(w => _context.Branch
+        .Where(b => b.Manager != null && b.Manager.companyID == companyId)
+        .Select(b => b.branchID)
+        .Contains(w.branchID))
+    .Select(w => new {
+        workerID = w.workerID,
+        workerName = w.workerName,
+        branchID = w.branchID,
+        professions = w.WorkerProfessions
+            .Select(wp => new {
+                professionID = wp.Profession!.professionID,
+                professionName = wp.Profession.professionName
+            })
+            .ToList()
+    })
+    .ToListAsync();
+
+    return Ok(new
+    {
+        branches,
+        shiftTypes,
+        professions,
+        workers
+    });
+}
     }
 }

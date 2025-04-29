@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using api.Data;
 using api.Dtos;
 using api.Mappers;
+using api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -127,5 +128,49 @@ public async Task<IActionResult> CreateMultipleProfessions([FromBody] List<Creat
 
             return NoContent();
         }
+        
+[HttpPost("company/{companyId:int}")]
+public async Task<IActionResult> CreateShiftTypesForCompany(int companyId, [FromBody] List<string> professionNames)
+{
+    if (professionNames == null || !professionNames.Any())
+    {
+        return BadRequest("No profession names provided.");
+    }
+
+    var company = await _context.Company
+        .Include(c => c.professions)
+        .FirstOrDefaultAsync(c => c.companyID == companyId);
+
+    if (company == null)
+    {
+        return NotFound("Company not found.");
+    }
+
+    var newProfessions = professionNames.Select(name => new Profession
+    {
+        professionName = name,
+        companyID = companyId
+    }).ToList();
+
+    _context.Profession.AddRange(newProfessions);
+    await _context.SaveChangesAsync();
+
+    return Ok(newProfessions);
+}
+
+
+[HttpGet("company/{companyId:int}")]
+public async Task<IActionResult> GetCompanyShiftTypes(int companyId)
+{
+    var professions = await _context.Profession
+        .Where(st => st.companyID == companyId)
+        .ToListAsync();
+
+    return Ok(professions);
+}
+
     }
 }
+
+
+ 

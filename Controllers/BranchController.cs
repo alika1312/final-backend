@@ -42,6 +42,20 @@ namespace api.Controllers
             if (branch == null) return NotFound();
             return Ok(branch);
         }
+        [HttpGet("company/{companyid:int}")]
+public async Task<IActionResult> GetBranchesByCompanyId(int companyid)
+{
+    var branches = await _context.Branch
+        .Include(b => b.Manager)
+        .Where(b => b.Manager != null && b.Manager.companyID == companyid)
+        .ToListAsync();
+
+    if (branches == null || !branches.Any())
+        return NotFound();
+
+    return Ok(branches);
+}
+
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] BranchDto branchDto)

@@ -35,6 +35,19 @@ namespace api.Controllers
             if (worker == null) return NotFound();
             return Ok(worker);
         }
+        [HttpGet("workers-by-branches")]
+public async Task<IActionResult> GetWorkersByBranchIds([FromQuery] List<int> branchIds)
+{
+    if (branchIds == null || !branchIds.Any())
+        return BadRequest("No branch IDs provided.");
+
+    var workers = await _context.Worker
+        .Where(w => branchIds.Contains(w.branchID))
+        .ToListAsync();
+
+    return Ok(workers);
+}
+
 
       [HttpPost]
 public async Task<IActionResult> CreateWorker([FromBody] CreateWorkerDto createWorkerDto)
@@ -110,10 +123,10 @@ public async Task<IActionResult> CreateWorkersWithProfessions([FromBody] List<Cr
         return BadRequest("No worker data provided.");
     }
 
-    // Validate all branch IDs
+    
     var branchIds = dtos.Select(d => d.branchID).Distinct().ToList();
 
-    // Use AsEnumerable() to perform the filtering in memory and ToList() instead of ToListAsync()
+
     var validBranches = _context.Branch
         .AsEnumerable()
         .Where(b => branchIds.Contains(b.branchID))

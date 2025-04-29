@@ -287,11 +287,16 @@ namespace api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("professionID"));
 
+                    b.Property<int>("companyID")
+                        .HasColumnType("int");
+
                     b.Property<string>("professionName")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("professionID");
+
+                    b.HasIndex("companyID");
 
                     b.ToTable("Profession");
                 });
@@ -480,6 +485,17 @@ namespace api.Migrations
                     b.Navigation("Manager");
                 });
 
+            modelBuilder.Entity("api.Models.Profession", b =>
+                {
+                    b.HasOne("api.Models.Company", "Company")
+                        .WithMany("professions")
+                        .HasForeignKey("companyID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
             modelBuilder.Entity("api.Models.Shift", b =>
                 {
                     b.HasOne("api.Models.ShiftType", "ShiftType")
@@ -565,6 +581,8 @@ namespace api.Migrations
 
             modelBuilder.Entity("api.Models.Company", b =>
                 {
+                    b.Navigation("professions");
+
                     b.Navigation("shiftTypes");
 
                     b.Navigation("users");

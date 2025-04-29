@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace api.Migrations
 {
     /// <inheritdoc />
-    public partial class AddCompanyToShiftType : Migration
+    public partial class AddCompanyIDtoProfession : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -46,21 +46,6 @@ namespace api.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Company", x => x.companyID);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "Profession",
-                columns: table => new
-                {
-                    professionID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    professionName = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Profession", x => x.professionID);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -124,6 +109,28 @@ namespace api.Migrations
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
                     table.ForeignKey(
                         name: "FK_AspNetUsers_Company_companyID",
+                        column: x => x.companyID,
+                        principalTable: "Company",
+                        principalColumn: "companyID",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Profession",
+                columns: table => new
+                {
+                    professionID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    professionName = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    companyID = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Profession", x => x.professionID);
+                    table.ForeignKey(
+                        name: "FK_Profession_Company_companyID",
                         column: x => x.companyID,
                         principalTable: "Company",
                         principalColumn: "companyID",
@@ -432,6 +439,11 @@ namespace api.Migrations
                 table: "Branch",
                 column: "ManagerID",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Profession_companyID",
+                table: "Profession",
+                column: "companyID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Shift_ShiftTypeID",
