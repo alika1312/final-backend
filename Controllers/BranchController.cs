@@ -124,15 +124,24 @@ public async Task<IActionResult> CreateMultiple([FromBody] List<BranchDto> branc
     return Ok(branchesToAdd.Select(b => b.ToBranchDto()));
 }
 
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var branch = await _context.Branch.FindAsync(id);
-            if (branch == null) return NotFound();
-            _context.Branch.Remove(branch);
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
+ [HttpDelete("{id:int}")]
+public async Task<IActionResult> DeleteBranch(int id)
+{
+    var branch = await _context.Branch.FindAsync(id);
+    if (branch == null) return NotFound();
+
+    var manager = await _context.Users.FindAsync(branch.ManagerID);
+    _context.Branch.Remove(branch);
+
+    if (manager != null)
+    {
+        _context.Users.Remove(manager);
+    }
+
+    await _context.SaveChangesAsync();
+    return NoContent();
+}
+
 
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] BranchDto branchDto)

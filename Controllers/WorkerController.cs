@@ -35,17 +35,16 @@ namespace api.Controllers
             if (worker == null) return NotFound();
             return Ok(worker);
         }
-        [HttpGet("workers-by-branches")]
-public async Task<IActionResult> GetWorkersByBranchIds([FromQuery] List<int> branchIds)
+[HttpPost("workers-by-branches")]
+public async Task<IActionResult> GetWorkersByBranchIds([FromBody] List<int> branchIds)
 {
     if (branchIds == null || !branchIds.Any())
         return BadRequest("No branch IDs provided.");
 
-    var workers = await _context.Worker
-        .Where(w => branchIds.Contains(w.branchID))
-        .ToListAsync();
+    var workers = await _context.Worker.ToListAsync(); 
+    var filteredWorkers = workers.Where(w => branchIds.Contains(w.branchID)).ToList(); 
 
-    return Ok(workers);
+    return Ok(filteredWorkers);
 }
 
 
