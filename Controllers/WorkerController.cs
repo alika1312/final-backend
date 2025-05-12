@@ -187,6 +187,29 @@ public async Task<IActionResult> CreateWorkersWithProfessions([FromBody] List<Cr
         createdWorkerProfessions
     });
 }
+[HttpPatch("{id:int}/name")]
+public async Task<IActionResult> UpdateWorkerName(int id, [FromBody] string newWorkerName)
+{
+    if (string.IsNullOrWhiteSpace(newWorkerName))
+    {
+        return BadRequest("Worker name cannot be empty.");
+    }
+
+    var worker = await _context.Worker.FindAsync(id);
+    if (worker == null)
+    {
+        return NotFound($"Worker with ID {id} not found.");
+    }
+
+    worker.workerName = newWorkerName;
+    await _context.SaveChangesAsync();
+
+    return Ok(new
+    {
+        worker.workerID,
+        worker.workerName
+    });
+}
 
     }
 }

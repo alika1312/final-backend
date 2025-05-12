@@ -101,7 +101,10 @@ namespace api.Controllers
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.UniqueName, user.UserName ?? string.Empty),
-                new Claim("companyId", user.companyID.ToString())
+                new Claim("companyId", user.companyID.ToString()),
+                new Claim("userId", user.Id.ToString()),
+                new Claim("isCEO", user.isCEO.ToString()),
+                new Claim("username", user.UserName!.ToString())
 
             };
 

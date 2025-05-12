@@ -170,5 +170,45 @@ public async Task<IActionResult> DeleteBranch(int id)
             await _context.SaveChangesAsync();
             return NoContent();
         }
+        [HttpPatch("{id:int}/name")]
+public async Task<IActionResult> UpdateBranchName(int id, [FromBody] BranchNameDto nameDto)
+{
+    var branch = await _context.Branch.FindAsync(id);
+    if (branch == null)
+        return NotFound();
+
+    if (string.IsNullOrWhiteSpace(nameDto.branchName))
+        return BadRequest("Branch name cannot be empty.");
+
+    branch.branchName = nameDto.branchName;
+    await _context.SaveChangesAsync();
+
+    return NoContent();
+}
+
+[HttpPatch("{id:int}/manager-username")]
+public async Task<IActionResult> UpdateManagerUsername(int id, [FromBody] UpdateManagerUsernameDto dto)
+{
+    if (string.IsNullOrWhiteSpace(dto.Username))
+        return BadRequest("Username cannot be empty.");
+
+    var branch = await _context.Branch
+        .Include(b => b.Manager)
+        .FirstOrDefaultAsync(b => b.branchID == id);
+
+    if (branch == null)
+        return NotFound("Branch not found.");
+
+    if (branch.Manager == null)
+        return BadRequest("Branch does not have an assigned manager.");
+
+    branch.Manager.UserName = dto.Username;
+
+    await _context.SaveChangesAsync();
+    return NoContent();
+}
+
     }
+    
+    
 }

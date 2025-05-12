@@ -11,4 +11,9 @@ namespace api.Dtos
         public string branchName { get; set; } = string.Empty;
         public int? ManagerID { get; set; }
     }
+        public class BranchNameDto
+    {
+        public string branchName { get; set; } = string.Empty;
+    }
+
 }

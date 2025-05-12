@@ -90,7 +90,7 @@ namespace api.Controllers
         }
 
 
-        [HttpPut("{id:int}/password")]
+        [HttpPatch("{id:int}/password")]
         public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordDto changePasswordDto)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());
