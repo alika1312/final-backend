@@ -9,6 +9,7 @@ namespace api.Dtos
 {
     public class ShiftRequestDto
     {
+        public int shiftID { get; set; }
         public DateOnly date { get; set; }
 
         public int extra { get; set; }
@@ -17,5 +18,6 @@ namespace api.Dtos
 
         [Required]
         public int ShiftTypeID { get; set; }
+        public int branchID { get; set; }
     }
 }

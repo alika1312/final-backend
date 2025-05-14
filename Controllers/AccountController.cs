@@ -7,6 +7,7 @@ using api.Dtos;
 using api.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -104,10 +105,14 @@ namespace api.Controllers
                 new Claim("companyId", user.companyID.ToString()),
                 new Claim("userId", user.Id.ToString()),
                 new Claim("isCEO", user.isCEO.ToString()),
-                new Claim("username", user.UserName!.ToString())
+                new Claim("username", user.UserName!.ToString()),
+                new Claim("branchId", user.ManagedBranch?.branchID!.ToString() ?? string.Empty),
+          
+                
+              
 
             };
-
+    
             var tokenDescriptor = new SecurityTokenDescriptor
             {
               

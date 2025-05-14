@@ -35,8 +35,39 @@ namespace api.Controllers
             if (worker == null) return NotFound();
             return Ok(worker);
         }
+[HttpGet("workers-by-branches/{id:int}")]
+public async Task<IActionResult> GetWorkersByBranchIds(int id)
+{
+    var branchIds = await _context.Branch
+        .Where(b => b.ManagerID == id)
+        .Select(b => b.branchID)
+        .ToListAsync();
+
+    var workers = _context.Worker
+        .Include(w => w.WorkerProfessions)
+            .ThenInclude(wp => wp.Profession)
+        .AsEnumerable()
+        .Where(w => branchIds.Contains(w.branchID))
+        .Select(w => new
+        {
+            w.workerID,
+            w.workerName,
+            w.branchID,
+           workerProfession = w.WorkerProfessions.Select(wp => new
+            {
+                wp.Profession!.professionID,
+                wp.Profession.professionName
+            }).ToList()
+        })
+        .ToList();
+
+    return Ok(workers); 
+}
+
+
+
 [HttpPost("workers-by-branches")]
-public async Task<IActionResult> GetWorkersByBranchIds([FromBody] List<int> branchIds)
+public async Task<IActionResult> PostWorkersByBranchIds([FromBody] List<int> branchIds)
 {
     if (branchIds == null || !branchIds.Any())
         return BadRequest("No branch IDs provided.");

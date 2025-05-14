@@ -11,6 +11,7 @@ namespace api.Models
         public string branchName { get; set; } = string.Empty;
         public int? ManagerID { get; set; }
         public ApplicationUser? Manager { get; set; }
+         public ICollection<Shift> Shifts { get; set; } = new List<Shift>();
         public ICollection<Worker> workers { get; set; } = new List<Worker>();
     }
 }

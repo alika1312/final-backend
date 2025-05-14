@@ -6,6 +6,7 @@ using api.Data;
 using api.Dtos;
 using api.Dtos.Shift;
 using api.Mappers;
+using api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,21 +31,51 @@ namespace api.Controllers
             return Ok(shiftDtos);
         }
 
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetShiftById(int id)
+      
+         [HttpGet("{branchId:int}")]
+        public async Task<IActionResult> GetShiftsByDate(int branchId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
         {
-            var shift = await _context.Shift
-                .Where(s => s.shiftID == id)
-                .Include(s => s.ShiftType)
-                .FirstOrDefaultAsync();
+            var shifts = await _context.Shift
+                .Where(s => s.branchID == branchId)
+                .Where(s => s.date >= DateOnly.FromDateTime(startDate) && s.date <= DateOnly.FromDateTime(endDate))
+                .Select(s => new 
+                {
+                    shiftID = s.shiftID,
+                    extra = s.extra,
+                    comment = s.comment,
+                      date = s.date,
+                    worker = s.WorkerShifts
+                  
+                        .Select(ws => new 
+                        {
+                            workerID = ws.Worker!.workerID,
+                            workerName = ws.Worker.workerName,
+                            workerProfession = ws.Worker.WorkerProfessions
+                                .Select(wp => new 
+                                {
+                                    professionID = wp.Profession!.professionID,
+                                    professionName = wp.Profession.professionName
+                                })
+                                .ToList()
+                        })
+                        .ToList(),
+          
+                    
+                    shiftType = new 
+                    {
+                        shiftTypeID = s.ShiftType!.shiftTypeID,
+                        shiftTypeName = s.ShiftType.shiftTypeName
+                    }
+                })
+                .ToListAsync();
 
-            if (shift == null)
+            if (shifts == null || !shifts.Any())
             {
-                return NotFound($"Shift with ID {id} not found.");
+                return NotFound($"No shifts found for Branch ID {branchId} in the specified date range.");
             }
 
-            var shiftDto = shift.ToShiftDto(_context);
-            return Ok(shiftDto);
+           
+            return Ok(shifts);
         }
 
         [HttpPost]
@@ -61,20 +92,21 @@ namespace api.Controllers
             await _context.SaveChangesAsync();
 
             var shiftDto = shiftModel.ToShiftDto(_context);
-            return CreatedAtAction(nameof(GetShiftById), new { id = shiftModel.shiftID }, shiftDto);
+            return CreatedAtAction(nameof(GetAll), new { id = shiftDto.shiftID }, shiftDto);
         }
-        [HttpPost("bulk")]
-public async Task<IActionResult> CreateMultipleShifts([FromBody] List<ShiftRequestDto> shiftRequestDtos)
+    [HttpPost("bulk/create")]
+public async Task<IActionResult> CreateOrUpdateMultipleShifts([FromBody] List<ShiftRequestDto> shiftRequestDtos)
 {
     if (shiftRequestDtos == null || !shiftRequestDtos.Any())
     {
         return BadRequest("No shifts provided.");
     }
 
-    var createdShifts = new List<ShiftDto>();
+    var processedShifts = new List<ShiftDto>();
 
     foreach (var shiftRequestDto in shiftRequestDtos)
     {
+        
         var shiftType = await _context.ShiftType
             .FirstOrDefaultAsync(st => st.shiftTypeID == shiftRequestDto.ShiftTypeID);
 
@@ -83,16 +115,41 @@ public async Task<IActionResult> CreateMultipleShifts([FromBody] List<ShiftReque
             return BadRequest($"Invalid ShiftTypeID: {shiftRequestDto.ShiftTypeID}");
         }
 
-        var shiftModel = shiftRequestDto.ToShiftFromCreateDTO(_context);
-        _context.Shift.Add(shiftModel);
+        Shift shiftModel;
+
+        
+        if (shiftRequestDto.shiftID > 0)
+        {
+            var foundShift = await _context.Shift
+                .FirstOrDefaultAsync(s => s.shiftID == shiftRequestDto.shiftID);
+
+         if (foundShift == null)
+{
+    return NotFound($"Shift with ID {shiftRequestDto.shiftID} not found.");
+}
+
+            shiftModel = foundShift!;
+
+
+            shiftModel.date = shiftRequestDto.date;
+            shiftModel.ShiftTypeID = shiftRequestDto.ShiftTypeID;
+            shiftModel.branchID = shiftRequestDto.branchID;
+            shiftModel.comment = shiftRequestDto.comment;
+           
+        }
+        else
+        {
+            
+            shiftModel = shiftRequestDto.ToShiftFromCreateDTO(_context);
+            _context.Shift.Add(shiftModel);
+        }
 
         var shiftDto = shiftModel.ToShiftDto(_context);
-        createdShifts.Add(shiftDto);
+        processedShifts.Add(shiftDto);
     }
 
     await _context.SaveChangesAsync();
-
-    return Ok(createdShifts);
+    return Ok(processedShifts);
 }
 
 

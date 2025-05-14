@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace api.Migrations
 {
     /// <inheritdoc />
-    public partial class AddCompanyIDtoProfession : Migration
+    public partial class resat : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -306,11 +306,18 @@ namespace api.Migrations
                     extra = table.Column<int>(type: "int", nullable: false),
                     comment = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    branchID = table.Column<int>(type: "int", nullable: false),
                     ShiftTypeID = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Shift", x => x.shiftID);
+                    table.ForeignKey(
+                        name: "FK_Shift_Branch_branchID",
+                        column: x => x.branchID,
+                        principalTable: "Branch",
+                        principalColumn: "branchID",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Shift_ShiftType_ShiftTypeID",
                         column: x => x.ShiftTypeID,
@@ -444,6 +451,11 @@ namespace api.Migrations
                 name: "IX_Profession_companyID",
                 table: "Profession",
                 column: "companyID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Shift_branchID",
+                table: "Shift",
+                column: "branchID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Shift_ShiftTypeID",

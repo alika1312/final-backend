@@ -312,6 +312,9 @@ namespace api.Migrations
                     b.Property<int>("ShiftTypeID")
                         .HasColumnType("int");
 
+                    b.Property<int>("branchID")
+                        .HasColumnType("int");
+
                     b.Property<string>("comment")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -325,6 +328,8 @@ namespace api.Migrations
                     b.HasKey("shiftID");
 
                     b.HasIndex("ShiftTypeID");
+
+                    b.HasIndex("branchID");
 
                     b.ToTable("Shift");
                 });
@@ -504,6 +509,14 @@ namespace api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("api.Models.Branch", "Branch")
+                        .WithMany("Shifts")
+                        .HasForeignKey("branchID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
                     b.Navigation("ShiftType");
                 });
 
@@ -576,6 +589,8 @@ namespace api.Migrations
 
             modelBuilder.Entity("api.Models.Branch", b =>
                 {
+                    b.Navigation("Shifts");
+
                     b.Navigation("workers");
                 });
 
