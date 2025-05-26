@@ -57,7 +57,7 @@ namespace api.Controllers
         [HttpPost]
         public async Task<IActionResult> AddWorkerToShift([FromBody] WorkerShiftRequestDto workerShiftRequest)
         {
-            var worker = await _context.Worker.FirstOrDefaultAsync(w => w.workerID == workerShiftRequest.workerID);
+            var worker = await _context.Worker.FirstOrDefaultAsync(w => workerShiftRequest.WorkerID!.Contains(w.workerID));
             if (worker == null)
             {
                 return BadRequest("Invalid WorkerID. Worker does not exist.");

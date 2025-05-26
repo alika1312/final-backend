@@ -14,10 +14,28 @@ namespace api.Dtos
 
         public int extra { get; set; }
         public string comment { get; set; } = string.Empty;
-        
 
-        [Required]
+
+
         public int ShiftTypeID { get; set; }
         public int branchID { get; set; }
     }
+   public class ShiftWorkerRequestDto
+{
+    public int shiftID { get; set; }
+    public DateTime date { get; set; }
+    public int extra { get; set;  }
+    public int ShiftTypeID { get; set; }
+    public int branchID { get; set; }
+  public string comment { get; set; } = string.Empty;
+    public List<int> WorkerIDs { get; set; } = new();
+}
+
+public class ShiftWorkersAssignmentDto
+{
+    public int ShiftID { get; set; }
+    public List<int> WorkerIds { get; set; } = new();
+}
+
+
 }

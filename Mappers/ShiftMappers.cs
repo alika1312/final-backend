@@ -11,7 +11,7 @@ namespace api.Mappers
     public static class ShiftMappers
     {
 
-        public static ShiftDto ToShiftDto(this Shift shiftModel, ApplicationDBContext _context)
+        public static ShiftDto ToShiftDto(this Shift shiftModel)
         {
             return new ShiftDto
             {
@@ -20,8 +20,9 @@ namespace api.Mappers
                 extra = shiftModel.extra,
                 comment = shiftModel.comment,
                 ShiftTypeID = shiftModel.ShiftTypeID,
+               branchID = shiftModel.branchID,
                 ShiftTypeName = shiftModel.ShiftType != null ? shiftModel.ShiftType.shiftTypeName : string.Empty
-,               Workers = [.. _context.WorkerShift.Where(ws => ws.ShiftID == shiftModel.shiftID).Select(s => s.Worker.workerName)]
+,          
             };
         }
 
@@ -39,7 +40,7 @@ namespace api.Mappers
                 extra = shiftDto.extra,
                 comment = shiftDto.comment,
                 ShiftTypeID = shiftDto.ShiftTypeID,
-                ShiftType = shiftType
+                branchID = shiftDto.branchID,
             };
         }
 

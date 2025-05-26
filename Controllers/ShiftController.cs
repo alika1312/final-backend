@@ -27,7 +27,7 @@ namespace api.Controllers
         public async Task<IActionResult> GetAll()
         {
             var shifts = await _context.Shift.ToListAsync();
-            var shiftDtos = shifts.Select(s => s.ToShiftDto(_context));
+            var shiftDtos = shifts.Select(s => s.ToShiftDto());
             return Ok(shiftDtos);
         }
 
@@ -69,14 +69,27 @@ namespace api.Controllers
                 })
                 .ToListAsync();
 
-            if (shifts == null || !shifts.Any())
-            {
-                return NotFound($"No shifts found for Branch ID {branchId} in the specified date range.");
-            }
+           
 
            
             return Ok(shifts);
         }
+
+[HttpDelete("delete/{branchId:int}")]
+        public async Task<IActionResult> DeleteShiftsByDate(int branchId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+        {
+            var shifts = await _context.Shift
+                .Where(s => s.branchID == branchId)
+                .Where(s => s.date >= DateOnly.FromDateTime(startDate) && s.date <= DateOnly.FromDateTime(endDate)).ToListAsync();
+            foreach (var shift in shifts)
+            {
+                _context.Shift.Remove(shift);
+                await _context.SaveChangesAsync();
+            }
+            return Ok(shifts);
+        }
+
+
 
         [HttpPost]
         public async Task<IActionResult> CreateShift([FromBody] ShiftRequestDto shiftRequestDto)
@@ -91,65 +104,106 @@ namespace api.Controllers
             _context.Shift.Add(shiftModel);
             await _context.SaveChangesAsync();
 
-            var shiftDto = shiftModel.ToShiftDto(_context);
+            var shiftDto = shiftModel.ToShiftDto();
             return CreatedAtAction(nameof(GetAll), new { id = shiftDto.shiftID }, shiftDto);
         }
-    [HttpPost("bulk/create")]
-public async Task<IActionResult> CreateOrUpdateMultipleShifts([FromBody] List<ShiftRequestDto> shiftRequestDtos)
+[HttpPost("bulk")]
+public async Task<IActionResult> CreateOrUpdateMultipleShifts([FromBody] List<ShiftWorkerRequestDto> shiftRequestDtos)
 {
     if (shiftRequestDtos == null || !shiftRequestDtos.Any())
-    {
         return BadRequest("No shifts provided.");
-    }
 
-    var processedShifts = new List<ShiftDto>();
+    var processedShifts = new List<Shift>();
+    var newAssignments = new List<WorkerShift>();
 
-    foreach (var shiftRequestDto in shiftRequestDtos)
+    var shiftIdsToRemoveAssignments = new List<int>();
+
+    foreach (var dto in shiftRequestDtos)
     {
-        
-        var shiftType = await _context.ShiftType
-            .FirstOrDefaultAsync(st => st.shiftTypeID == shiftRequestDto.ShiftTypeID);
+        var shiftTypeExists = await _context.ShiftType.AnyAsync(st => st.shiftTypeID == dto.ShiftTypeID);
+        if (!shiftTypeExists) return BadRequest($"Invalid ShiftTypeID: {dto.ShiftTypeID}");
 
-        if (shiftType == null)
+        var branchExists = await _context.Branch.AnyAsync(b => b.branchID == dto.branchID);
+        if (!branchExists) return BadRequest($"Invalid branchID: {dto.branchID}");
+
+        Shift? shift = await _context.Shift.FirstOrDefaultAsync(s => s.shiftID == dto.shiftID);
+
+        if (dto.shiftID > 0)
         {
-            return BadRequest($"Invalid ShiftTypeID: {shiftRequestDto.ShiftTypeID}");
-        }
+            if (shift == null) return NotFound($"Shift with ID {dto.shiftID} not found.");
 
-        Shift shiftModel;
-
-        
-        if (shiftRequestDto.shiftID > 0)
-        {
-            var foundShift = await _context.Shift
-                .FirstOrDefaultAsync(s => s.shiftID == shiftRequestDto.shiftID);
-
-         if (foundShift == null)
-{
-    return NotFound($"Shift with ID {shiftRequestDto.shiftID} not found.");
-}
-
-            shiftModel = foundShift!;
-
-
-            shiftModel.date = shiftRequestDto.date;
-            shiftModel.ShiftTypeID = shiftRequestDto.ShiftTypeID;
-            shiftModel.branchID = shiftRequestDto.branchID;
-            shiftModel.comment = shiftRequestDto.comment;
-           
+            shift.date = DateOnly.FromDateTime(dto.date);
+            shift.ShiftTypeID = dto.ShiftTypeID;
+                    shift.extra = dto.extra;
+            shift.branchID = dto.branchID;
+            shift.comment = dto.comment;
         }
         else
         {
-            
-            shiftModel = shiftRequestDto.ToShiftFromCreateDTO(_context);
-            _context.Shift.Add(shiftModel);
+            shift = new Shift
+            {
+                date = DateOnly.FromDateTime(dto.date),
+                ShiftTypeID = dto.ShiftTypeID,
+                extra = dto.extra,
+                branchID = dto.branchID,
+                comment = dto.comment
+            };
+
+            _context.Shift.Add(shift);
         }
 
-        var shiftDto = shiftModel.ToShiftDto(_context);
-        processedShifts.Add(shiftDto);
+        processedShifts.Add(shift);
+       
+        shiftIdsToRemoveAssignments.Add(shift.shiftID);
     }
 
+
+     await _context.SaveChangesAsync(); 
+
+  
+
+var oldAssignments = (await _context.WorkerShift
+    .ToListAsync())
+    .Where(ws => shiftIdsToRemoveAssignments.Contains(ws.ShiftID))
+    .ToList();
+
+
+
+    _context.WorkerShift.RemoveRange(oldAssignments);
     await _context.SaveChangesAsync();
-    return Ok(processedShifts);
+
+    var allWorkers = await _context.Worker.ToListAsync();
+    var validWorkers = allWorkers.ToDictionary(w => w.workerID);
+
+    foreach (var dto in shiftRequestDtos)
+    {
+        var matchedShift = processedShifts.FirstOrDefault(s =>
+            s.shiftID == dto.shiftID ||
+            (dto.shiftID == 0 && s.date == DateOnly.FromDateTime(dto.date) &&
+             s.ShiftTypeID == dto.ShiftTypeID && s.branchID == dto.branchID)
+        );
+
+        if (matchedShift == null) continue;
+
+        foreach (var workerID in dto.WorkerIDs.Distinct())
+        {
+            if (!validWorkers.ContainsKey(workerID)) continue;
+
+            newAssignments.Add(new WorkerShift
+            {
+                ShiftID = matchedShift.shiftID,
+                WorkerID = workerID,
+                Worker = validWorkers[workerID],
+                Shift = matchedShift
+            });
+        }
+    }
+
+    await _context.WorkerShift.AddRangeAsync(newAssignments);
+    await _context.SaveChangesAsync();
+
+    var result = processedShifts.Select(s => s.ToShiftDto()).ToList();
+    return Ok(result);
 }
 
 
@@ -189,7 +243,7 @@ public async Task<IActionResult> CreateOrUpdateMultipleShifts([FromBody] List<Sh
 
             await _context.SaveChangesAsync();
 
-            var shiftDto = shift.ToShiftDto(_context);
+            var shiftDto = shift.ToShiftDto();
             return Ok(shiftDto);
         }
     }

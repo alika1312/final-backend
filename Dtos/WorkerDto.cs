@@ -24,9 +24,9 @@ namespace api.Dtos
     }
     public class CreateWorkerWithProfessionsDto
 {
-    public string workerName { get; set; }
+    public string? workerName { get; set; }
     public int branchID { get; set; }
-    public List<int> professionIDs { get; set; }
+    public List<int>? professionIDs { get; set; }
 }
 
 

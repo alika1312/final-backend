@@ -12,8 +12,8 @@ namespace api.Dtos
 
     public class WorkerShiftRequestDto
     {
-        [Required]
-        public int workerID { get; set; }
+        
+        public List<int>? WorkerID  { get; set; }
         [Required]
         public int shiftID { get; set; }
 
